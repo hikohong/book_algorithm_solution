@@ -24,17 +24,21 @@ struct Team {
 
 // ======== 3種モデル ========
 
-// 線形回帰: 先頭 n 点で係数を求め, x=target を予測
-double pred_linear(const vector<double>& s, int n, double target) {
+// 線形回帰: s[from..n-1] の window 点で係数を求め, 次の点を予測
+// window=0 の場合は全点を使用
+double pred_linear(const vector<double>& s, int n, int window = 0) {
+    int from = (window > 0) ? max(0, n - window) : 0;
+    int cnt  = n - from;
     double sx=0, sy=0, sxy=0, sx2=0;
-    for (int i = 0; i < n; ++i) {
-        sx += i; sy += s[i]; sxy += i*s[i]; sx2 += (double)i*i;
+    for (int i = from; i < n; ++i) {
+        double xi = i - from; // ローカルインデックス 0,1,...,cnt-1
+        sx += xi; sy += s[i]; sxy += xi*s[i]; sx2 += xi*xi;
     }
-    double D = n*sx2 - sx*sx;
-    if (fabs(D) < 1e-9) return sy / n;
-    double a = (n*sxy - sx*sy) / D;
-    double b = (sy - a*sx) / n;
-    return a*target + b;
+    double D = cnt*sx2 - sx*sx;
+    if (fabs(D) < 1e-9) return sy / cnt;
+    double a = (cnt*sxy - sx*sy) / D;
+    double b = (sy - a*sx) / cnt;
+    return a*cnt + b; // 次の点 (ローカルインデックス = cnt) を予測
 }
 
 // 移動平均: 直近 window 点の平均
@@ -68,13 +72,16 @@ struct MSEResult {
     }
 };
 
+// window=10: 線形回帰は直近10屆のみ使用
+const int LIN_WINDOW = 10;
+
 MSEResult compute_mse(const vector<double>& s, int k = 5) {
     int n = s.size();
     MSEResult m = {0,0,0,0,0};
     for (int i = n-k; i < n; ++i) {
         double actual = s[i];
         auto sq = [](double x){ return x*x; };
-        m.lin   += sq(actual - pred_linear(s, i, i));
+        m.lin   += sq(actual - pred_linear(s, i, LIN_WINDOW));
         m.ma3   += sq(actual - pred_ma(s, i, 3));
         m.ma4   += sq(actual - pred_ma(s, i, 4));
         m.exp03 += sq(actual - pred_exp(s, i, 0.3));
@@ -89,7 +96,7 @@ double predict_2026(const vector<double>& s, const MSEResult& m) {
     int n = s.size();
     string best = m.best_name();
     double p;
-    if      (best == "線形回帰")    p = pred_linear(s, n, n);
+    if      (best == "線形回帰")    p = pred_linear(s, n, LIN_WINDOW);
     else if (best == "MA(3)")       p = pred_ma(s, n, 3);
     else if (best == "MA(4)")       p = pred_ma(s, n, 4);
     else if (best == "Exp(α=0.3)") p = pred_exp(s, n, 0.3);
@@ -162,7 +169,7 @@ int main() {
     cout << "  ※ 小さいほど実績データへの適合度が高い\n";
     cout << "========================================\n";
     cout << setw(11) << "チーム"
-         << setw(9)  << "線形回帰"
+         << setw(13) << "線形回帰(10屆)"
          << setw(7)  << "MA(3)"
          << setw(7)  << "MA(4)"
          << setw(10) << "Exp(0.3)"
@@ -175,7 +182,7 @@ int main() {
         MSEResult m = compute_mse(t.s, 5);
         mse_results.push_back(m);
         cout << setw(11) << t.name
-             << setw(9)  << m.lin
+             << setw(13)  << m.lin
              << setw(7)  << m.ma3
              << setw(7)  << m.ma4
              << setw(10) << m.exp03

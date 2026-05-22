@@ -19,6 +19,22 @@ pair<double,double> linear_regression(const vector<double>& x, const vector<doub
     return {a, b};
 }
 
+// ウィンドウ付き線形回帰: s[n-window..n-1] の window 点で次の点を予測
+double pred_linear_windowed(const vector<double>& s, int n, int window) {
+    int from = max(0, n - window);
+    int cnt  = n - from;
+    double sx=0, sy=0, sxy=0, sx2=0;
+    for (int i = from; i < n; ++i) {
+        double xi = i - from;
+        sx += xi; sy += s[i]; sxy += xi*s[i]; sx2 += xi*xi;
+    }
+    double D = cnt*sx2 - sx*sx;
+    if (fabs(D) < 1e-9) return sy / cnt;
+    double a = (cnt*sxy - sx*sy) / D;
+    double b = (sy - a*sx) / cnt;
+    return a*cnt + b;
+}
+
 vector<double> moving_average(const vector<double>& data, int k) {
     int n = data.size();
     vector<double> ma;
@@ -116,6 +132,38 @@ void test_linear_regression() {
         auto [a, b] = linear_regression(x, y);
         check("TC5: 負傾き a = -3.0",  near(a, -3.0));
         check("TC5: 負傾き b = 10.0",  near(b, 10.0));
+    }
+
+    // TC6: ウィンドウ付き回帰 — window=3 は末尾3点のみ使用
+    // データ: [0,0,0,10,20,30] (末尾3点: 10,20,30 → 傾き=10)
+    // 次の予測値 = 40
+    {
+        vector<double> s = {0,0,0,10,20,30};
+        int n = s.size();
+        double pred = pred_linear_windowed(s, n, 3);
+        check("TC6: window=3 で末尾3点のみ回帰, 予測=40", near(pred, 40.0));
+    }
+
+    // TC7: window >= n → 全点使用と同等
+    {
+        vector<double> s = {1,3,5,7,9}; // y=2x+1
+        int n = s.size();
+        double pred_full   = pred_linear_windowed(s, n, 100); // window>n
+        double pred_normal = pred_linear_windowed(s, n, n);   // window=n
+        check("TC7: window>=n は全点使用と同等", near(pred_full, pred_normal));
+        check("TC7: 完全線形データ window=n の予測=11", near(pred_full, 11.0));
+    }
+
+    // TC8: window=10 でトレンド反転を検出
+    // 前半12点: 上昇, 後半10点: 下降 → window=10 は下降トレンドを捉える
+    {
+        vector<double> s = {1,2,3,4,5,6,7,8,9,10,11,12, // 上昇
+                            11,10,9,8,7,6,5,4,3,2};      // 下降 (10点)
+        int n = s.size(); // 22
+        double pred = pred_linear_windowed(s, n, 10);
+        check("TC8: window=10 が下降トレンドを捉えて pred < 2", pred < 2.0);
+        double pred_all = pred_linear_windowed(s, n, 22); // 全点 (window=n)
+        check("TC8: window=22 (全点) の予測は window=10 より大きい", pred_all > pred);
     }
 }
 
