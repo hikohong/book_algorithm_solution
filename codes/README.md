@@ -179,4 +179,5 @@
 - [code 19.1：線形回帰 (最小二乗法) による未来予測](https://github.com/drken1215/book_algorithm_solution/blob/master/codes/chap19/code_19_1.cpp)
 - [code 19.2：移動平均による未来予測](https://github.com/drken1215/book_algorithm_solution/blob/master/codes/chap19/code_19_2.cpp)
 - [code 19.3：指数平滑化による未来予測](https://github.com/drken1215/book_algorithm_solution/blob/master/codes/chap19/code_19_3.cpp)
+- [code 19.4：FIFA ワールドカップ 2026 優勝予測 (実データによるモデル比較)](https://github.com/drken1215/book_algorithm_solution/blob/master/codes/chap19/code_19_4.cpp)
 
