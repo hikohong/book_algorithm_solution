@@ -170,3 +170,13 @@
 
 - [code 18.1：重み付き最大安定集合問題を解く，木上の動的計画法](https://github.com/drken1215/book_algorithm_solution/blob/master/codes/chap18/code_18_1.cpp) 
 
+
+
+　
+
+# 19 章　未来予測アルゴリズム
+
+- [code 19.1：線形回帰 (最小二乗法) による未来予測](https://github.com/drken1215/book_algorithm_solution/blob/master/codes/chap19/code_19_1.cpp)
+- [code 19.2：移動平均による未来予測](https://github.com/drken1215/book_algorithm_solution/blob/master/codes/chap19/code_19_2.cpp)
+- [code 19.3：指数平滑化による未来予測](https://github.com/drken1215/book_algorithm_solution/blob/master/codes/chap19/code_19_3.cpp)
+
